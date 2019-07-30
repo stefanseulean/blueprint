@@ -1,0 +1,35 @@
+version: "3"
+services:
+  blueprint-database:
+    container_name: "blueprint-database"
+    image: docker.tradeshift.net/tradeshift-docker-postgres10-xenial:e952488ba56b0fb8991f8c975b331b82639d64aa
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_DB=blueprintdb
+      - POSTGRES_USER=blueprintdb
+      - POSTGRES_PASSWORD=blueprintdb
+    restart: always
+
+  blueprint-service-local:
+    image: docker.tradeshift.net/blueprint-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=local
+    depends_on:
+      - blueprint-database
+    links:
+      - blueprint-database
+    ports:
+      - "8080:8080"
+      - "5005:5005"
+    container_name: "blueprint-service-local"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "25672:15672"
+      - "15671:15671"
+      - "5672:5672"
+      - "55671:5671"
+    volumes:
+      - ./src/test/resources/rabbitmq:/etc/rabbitmq
