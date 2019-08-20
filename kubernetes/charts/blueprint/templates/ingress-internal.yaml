@@ -1,0 +1,42 @@
+{{- if .Values.ingressinternal.enabled -}}
+{{- $root := . -}}
+{{- $fullName := include "blueprint.fullname" . -}}
+{{- $servicePort := .Values.service.internalPort -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-internal
+  labels:
+    app: {{ template "blueprint.name" . }}
+    chart: {{ template "blueprint.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    team: {{ .Values.slack_channel }}
+    repository: {{ .Values.service.repository }}
+    # This is need to proxy the callers hostname to the load balancer
+    use-proxy-protocol: "true"
+    kubernetes.io/ingress.class: "nginx-internal"
+{{- if .Values.ingressinternal.tls.client_certs_required }}
+{{- end }}
+{{- with .Values.ingressinternal.annotations }}
+{{ toYaml . | indent 4 }}
+{{- end }}
+
+spec:
+{{- if .Values.ingressinternal.tls.enabled }}
+  tls:
+    - hosts:
+        -  {{ template "hostname" $root }}
+      secretName: {{ .Release.Name }}-tls-secret
+{{- end }}
+  rules:
+    - host:  {{ template "hostname" $root }}
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: {{ .Release.Name }}
+              servicePort: http
+{{- end }}
+

@@ -1,0 +1,14 @@
+region: eu-west-1
+environment: sand
+site: ts.sv
+certs:
+  crt:
+  key:
+
+sentry:
+  enabled: true
+  dsn:
+  environment: sandbox
+
+metrics:
+  enabled: true

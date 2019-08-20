@@ -34,6 +34,7 @@
         <joda-time.version>2.10.3</joda-time.version>
         <micrometer-registry-statsd.version>1.2.0</micrometer-registry-statsd.version>
         <aws-java-sdk.version>1.11.595</aws-java-sdk.version>
+        <tradeshift.common.version>350.2.4</tradeshift.common.version>
     </properties>
 
     <repositories>
@@ -97,6 +98,11 @@
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-statsd</artifactId>
             <version>${micrometer-registry-statsd.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.tradeshift</groupId>
+            <artifactId>tradeshift-common-tls</artifactId>
+            <version>${tradeshift.common.version}</version>
         </dependency>
     </dependencies>
 
