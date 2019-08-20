@@ -19,12 +19,22 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         temp:
           use_jdbc_metadata_defaults: false
+# We can rely on spring boot auto config using related rabbit properties rabbitmq.host
+  rabbitmq:
+    host: localhost
+    port: 5671
+    virtual-host: tradeshift
+    ssl:
+      enabled: true
+      algorithm: TLSv1.2
+      key-store: classpath:blueprint.eu-west-1.test.ts.sv.pkcs12
+      key-store-password: shifthappens
+
 
 
 #Blueprint RabbitMQ configuration.It should be explained and presented during presentation.
-  host: localhost
-  virtual-host: tradeshift
-  port-listener: 55671
+host: localhost
+virtual-host: tradeshift
 
 # Certification.It should be explained and presented during presentation.
 tls:

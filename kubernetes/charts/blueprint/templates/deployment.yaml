@@ -1,0 +1,77 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ template "service.fullname" . }}
+  labels:
+    app: {{ template "service.name" . }}
+    chart: {{ template "service.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    team: {{ .Values.slack_channel }}
+    repository: {{ .Values.repository }}
+
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: {{ .Values.upgrade.strategy }}
+    rollingUpdate:
+      maxSurge: {{ .Values.upgrade.maxSurge }}
+      maxUnavailable: {{ .Values.upgrade.maxUnavailable }}
+  selector:
+    matchLabels:
+      app: {{ template "service.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "service.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.git_hash }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+          {{- range $index, $value := .Values.envs }}
+          - name: {{ $index }}
+            value: {{ $value | quote}}
+          {{- end }}
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}-credentials
+                key: sentry_dsn
+          - name: SENTRY_ENVIRONMENT
+            value: {{ .Values.sentry.environment }}
+          - name: SENTRY_RELEASE
+            value: {{ .Values.git_hash }}
+          {{- end }}
+          - name: METRICS_ENABLED
+            value: {{ .Values.metrics.enabled | quote }}
+          volumeMounts:
+            - name: etc-volume
+            mountPath: /etc/tradeshift/blueprint
+              - name: log-volume
+            mountPath: /var/log/tradeshift/blueprint
+
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+  {{ toYaml .Values.app.probes | indent 10 }}
+resources:
+  {{ toYaml .Values.resources | indent 12 }}
+  {{- with .Values.nodeSelector }}
+nodeSelector:
+  {{ toYaml . | indent 8 }}
+  {{- end }}
+  {{- with .Values.affinity }}
+affinity:
+  {{ toYaml . | indent 8 }}
+  {{- end }}
+  {{- with .Values.tolerations }}
+tolerations:
+  {{ toYaml . | indent 8 }}
+  {{- end }}

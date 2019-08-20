@@ -1,0 +1,123 @@
+region: eu-west-1
+environment: test
+site: ts.sv
+
+backend:
+  baseurl: http://blueprint:8281/rest
+
+sentry:
+  enabled: false
+  dsn:
+  environment: local
+
+metrics:
+  enabled: false
+
+image:
+  # The image name / location
+  repository: docker.tradeshift.net/blueprint
+  # image tag / version. This uses the name git_hash because this enables continuous deployment, since we inject this variable
+  # into the chart at deploy time
+
+  pullPolicy: IfNotPresent
+
+git_hash:
+
+service:
+  # does this service needs to be addressable in the cluster (DNS name)
+  enabled: true
+  # Service type,
+  # - ClusterIP     Service accessible from inside the cluster, though if you enable ingress you can
+  #                 still access it from outside the cluster
+  #
+  # - LoadBalancer  Create an ELB that points to your service, this is not need for most services. A use-case could
+  #                 be TCP based connections, that can't be handled via the Ingress section
+  #
+  # - NodePort      This will expose this service on every node in the cluster on the same port number
+  type: ClusterIP
+  # Port the application is exposing if any
+  port: 8778
+  exposedport: 80
+app:
+  probes:
+    # Verify if your service is ready for handling request; if it's not passing, we remove it from k8s service list
+    readinessProbe:
+      httpGet:
+        path: /rest/external/health
+        port: http
+      initialDelaySeconds: 60
+    # Verify if your service in the pod is in a dead state; if it doesn't pass, we will try restarting your pod. (So a service can be alive but not ready, and that is an okay, hopefully it won't be like that forever.)
+    livenessProbe:
+      httpGet:
+        path: /rest/external/health
+        port: http
+      initialDelaySeconds: 60
+# The slack channel of the team owning this component
+slack_channel: dev-your-team
+
+# Environment variables that is accessible from the service / deployment
+envs:
+  name: "value"
+  another: "value"
+
+
+# Resource for the service
+# requests: When using the amount of memory the service is marked as a candidate for termination in case
+#           of out of memory on the node
+# limits: if the service reaches this amount it WILL be restarted
+resources:
+  limits:
+    cpu: 0.5
+    memory: 2048Mi
+  requests:
+    cpu: 0.5
+    memory: 2048Mi
+
+# number of instance to run
+replicaCount: 2
+
+# Upgrade strategy - RollingUpdate is currently the only one supported by TS at the moment
+upgrade:
+  strategy: RollingUpdate
+  maxSurge: 1
+  maxUnavailable: 0
+
+#
+#  Ingress for exposing the service inside the VPC
+#
+ingressinternal:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: "nginx-internal"
+  # hosts will create a hostname accesible from inside the VPC
+  # in this case blueprint.eu-west-1.test.ts.sv, some of the values comes from the site, environment, region above
+  tls:
+    enabled: true
+    client_certs_required: true
+
+#
+# Ingress for exposing the service on the internet
+#
+ingress:
+  enabled: false
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    # Whitelist certain IP's to access this service
+    # nginx.ingress.kubernetes.io/whitelist-source-range: 192.30.252.0/22,185.199.108.0/22,5.56.144.196/32,5.56.144.198/32,142.254.28.146/32,178.49.148.100/32,87.243.3.34/32,109.166.189.50/32,78.40.84.83/32,4.53.137.82/32,173.247.199.142/32
+
+  # hosts will create a hostname accesible from the internet
+  # in this case blueprint.eu-west-1.test.ts.sv, some of the values comes from the site, environment, region above
+  tls:
+    enabled: false
+    client_certs_required: false
+
+# Certificate for the service if TLS is enabled in the ingress section.
+certs:
+  trusted_ca:
+  crt:
+  key:
+
+db_name: blueprint-database
+
+dbkey: dbkey
+
